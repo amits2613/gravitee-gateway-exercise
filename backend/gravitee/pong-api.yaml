@@ -1,0 +1,58 @@
+# GKO ApiV4Definition for the pong backend's /ping route.
+# Based on the echo-api example in the GKO quickstart:
+# https://documentation.gravitee.io/gravitee-kubernetes-operator-gko/getting-started/quickstart-guide
+# contextRef points at the ManagementContext in terraform/gravitee/.
+apiVersion: gravitee.io/v1alpha1
+kind: ApiV4Definition
+metadata:
+  name: pong-api
+  namespace: gravitee
+spec:
+  contextRef:
+    name: "management-context"
+  name: "pong-api"
+  description: "GET /ping proxied to the pong backend"
+  version: "1.0"
+  type: "PROXY"
+  state: "STARTED"
+  lifecycleState: "PUBLISHED"
+  visibility: "PUBLIC"
+  listeners:
+    - type: HTTP
+      paths:
+        - path: "/"
+      entrypoints:
+        - type: http-proxy
+          qos: AUTO
+  endpointGroups:
+    - name: pong-backend-group
+      type: http-proxy
+      endpoints:
+        - name: pong-backend
+          type: http-proxy
+          inheritConfiguration: false
+          configuration:
+            target: "http://pong-backend.backend.svc.cluster.local:8080"
+          secondary: false
+  flows:
+    - name: "GET /ping"
+      enabled: true
+      selectors:
+        - type: HTTP
+          path: "/ping"
+          pathOperator: EQUALS
+          methods:
+            - GET
+      request: []
+      response: []
+      subscribe: []
+      publish: []
+  flowExecution:
+    mode: DEFAULT
+    matchRequired: false
+  plans:
+    KeyLess:
+      name: "Keyless"
+      description: "No authentication, for the exercise"
+      security:
+        type: "KEY_LESS"

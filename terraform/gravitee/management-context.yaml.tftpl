@@ -1,0 +1,18 @@
+# Connects GKO to the Management API so it can push API definitions and
+# control their lifecycle, per the quickstart guide's "Create a
+# ManagementContext" step (Option 2: Username/Password, since this is a
+# local APIM instance using the default admin account).
+# https://documentation.gravitee.io/gravitee-kubernetes-operator-gko/getting-started/quickstart-guide
+apiVersion: gravitee.io/v1alpha1
+kind: ManagementContext
+metadata:
+  name: "management-context"
+  namespace: ${namespace}
+spec:
+  baseUrl: ${management_api_base_url}
+  environmentId: DEFAULT
+  organizationId: DEFAULT
+  auth:
+    credentials:
+      username: ${management_username}
+      password: ${management_password}

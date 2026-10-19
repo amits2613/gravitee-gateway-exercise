@@ -1,0 +1,13 @@
+# Terraform: state, provider cache, kubeconfig. Commit .terraform.lock.hcl.
+terraform/.terraform/
+terraform/.kube/
+terraform/*.tfstate
+terraform/*.tfstate.*
+crash.log
+
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
