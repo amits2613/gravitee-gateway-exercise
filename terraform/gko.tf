@@ -42,28 +42,12 @@ resource "time_sleep" "wait_for_management_api" {
     run_at = timestamp()
   }
 
-  depends_on = [kubectl_manifest.management_context]
+  depends_on = [kubectl_manifest.management_context, kubernetes_namespace_v1.backend]
 }
-
-# The /ping route, owned by the backend (backend/gravitee/pong-api.yaml).
-# resource "kubectl_manifest" "pong_api" {
-#   yaml_body = file("${path.module}/../backend/gravitee/pong-api.yaml")
-
-#   depends_on = [time_sleep.wait_for_management_api]
-# }
-
-# # Destroy pong_api before management_context, so the webhook is satisfied.
-# resource "null_resource" "destroy_order" {
-#   triggers = {
-#     management_context_id = kubectl_manifest.management_context.id
-#   }
-
-#   depends_on = [kubectl_manifest.pong_api]
-# }
 
 resource "kubectl_manifest" "pong_api" {
   yaml_body = file("${path.module}/../backend/gravitee/pong-api.yaml")
-
-  depends_on = [time_sleep.wait_for_management_api]
   wait = true
+
+  depends_on = [ time_sleep.wait_for_management_api, kubernetes_namespace_v1.backend ]
 }

@@ -9,7 +9,7 @@ gateway_host_port = 8080 # host port -> gateway.service.nodePort below
 gravitee_namespace = "gravitee"
 backend_namespace  = "backend"
 
-api_apply_delay = "1m"
+api_apply_delay = "30s"
 
 backend_image = "python:3.12.7-alpine3.20"
 

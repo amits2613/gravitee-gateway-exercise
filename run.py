@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 TF_DIR = ROOT / "terraform"
-WAIT_SECONDS = int(os.environ.get("PONG_WAIT_SECONDS", "420"))
+WAIT_SECONDS = int(os.environ.get("PONG_WAIT_SECONDS", "10"))
 
 INSTALL_HINTS = {
     "docker": "Install Docker Desktop (Windows, macOS) or Docker Engine (Linux) and start it.",
