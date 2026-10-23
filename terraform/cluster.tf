@@ -25,8 +25,13 @@ resource "kind_cluster" "this" {
 
 resource "kubernetes_namespace_v1" "gravitee" {
   metadata {
-    name   = var.gravitee_namespace
-    labels = { "app.kubernetes.io/part-of" = var.cluster_name }
+    name = var.gravitee_namespace
+    labels = {
+      "app.kubernetes.io/part-of" = var.cluster_name
+      # Third-party charts run here. Violations of the restricted level are
+      # logged, not blocked.
+      "pod-security.kubernetes.io/audit" = "restricted"
+    }
   }
   depends_on = [kind_cluster.this]
 }
@@ -36,7 +41,7 @@ resource "kubernetes_namespace_v1" "backend" {
     name = var.backend_namespace
     labels = {
       "app.kubernetes.io/part-of"          = var.cluster_name
-      "pod-security.kubernetes.io/enforce" = "privileged"
+      "pod-security.kubernetes.io/enforce" = "restricted"
     }
   }
   depends_on = [kind_cluster.this]

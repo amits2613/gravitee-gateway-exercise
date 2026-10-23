@@ -19,9 +19,6 @@ resource "kubernetes_deployment_v1" "pong_backend" {
     labels    = { app = "pong-backend" }
   }
 
-  # Re-applying after config changes waits for the API to be ready.
-  depends_on = [kubernetes_namespace_v1.backend]
-
   spec {
     replicas = 1
 
