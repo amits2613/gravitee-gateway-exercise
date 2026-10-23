@@ -39,15 +39,18 @@ variable "backend_namespace" {
 
 # ---- MongoDB ----
 
-variable "mongodb_chart_version" {
-  description = "cloudpirates/mongodb chart version. Empty means the latest."
-  type        = string
-  default     = ""
-}
-
-variable "mongodb_values" {
-  description = "Helm values for the bitnami/mongodb release. Set in terraform.tfvars."
-  type        = any
+variable "mongodb" {
+  description = "MongoDB for the Management API and gateway. Official image, authentication on, data on a PersistentVolumeClaim."
+  type = object({
+    image        = string
+    database     = string
+    username     = string
+    storage_size = string
+    resources = object({
+      requests = object({ cpu = string, memory = string })
+      limits   = object({ cpu = string, memory = string })
+    })
+  })
 }
 
 # ---- Gravitee APIM (Management API + Gateway) ----
@@ -101,9 +104,9 @@ variable "gko_values" {
 }
 
 variable "api_apply_delay" {
-  description = "Wait before the /ping API is applied, so the Management API is ready. Runs on every apply."
+  description = "Wait before the /ping API is applied, so the Management API is ready. Runs on first install and whenever the apim or gko release inputs change."
   type        = string
-  default     = "1m"
+  default     = "30s"
 }
 
 # ---- Backend ----

@@ -23,9 +23,10 @@ apim_values = {
   elasticsearch = { enabled = false }
   es            = { enabled = false }
 
-  # Host is <mongodb release>.<namespace>.svc.cluster.local (mongodb.tf)
+  # Placeholder without credentials. The real connection string, with the
+  # generated password, comes from the Secret through api.env and gateway.env.
   mongo = {
-    uri = "mongodb://gravitee-mongodb.gravitee.svc.cluster.local:27017/gravitee?serverSelectionTimeoutMS=5000&connectTimeoutMS=5000&socketTimeoutMS=5000"
+    uri = "mongodb://gravitee-mongodb.gravitee.svc.cluster.local:27017/gravitee"
   }
 
   management = { type = "mongodb" }
@@ -53,6 +54,16 @@ apim_values = {
       limits   = { cpu = "1", memory = "1Gi" }
     }
     analytics = { type = "none" }
+
+    # Overrides management.mongodb.uri with the value from the Secret created in mongodb.tf
+    env = [
+      {
+        name = "gravitee_management_mongodb_uri"
+        valueFrom = {
+          secretKeyRef = { name = "gravitee-mongodb-uri", key = "uri" }
+        }
+      },
+    ]
   }
 
   gateway = {
@@ -75,6 +86,30 @@ apim_values = {
       limits   = { cpu = "1", memory = "1Gi" }
     }
     reporters = { elasticsearch = { enabled = false } }
+
+    # Prometheus metrics on the gateway technical API (port 18082)
+    services = {
+      metrics = {
+        enabled    = true
+        prometheus = { enabled = true }
+      }
+    }
+
+    # Overrides the MongoDB connection for the management and rate-limit repositories
+    env = [
+      {
+        name = "gravitee_management_mongodb_uri"
+        valueFrom = {
+          secretKeyRef = { name = "gravitee-mongodb-uri", key = "uri" }
+        }
+      },
+      {
+        name = "gravitee_ratelimit_mongodb_uri"
+        valueFrom = {
+          secretKeyRef = { name = "gravitee-mongodb-uri", key = "uri" }
+        }
+      },
+    ]
   }
 }
 
@@ -84,18 +119,16 @@ gko_chart_version = "4.12.22"
 # Empty means chart defaults, as in the install-with-helm guide.
 gko_values = {}
 
-# ---- bitnami/mongodb release ----
-mongodb_values = {
-  auth = {
-    enabled = false
-  }
-  persistence = {
-    enabled = false
-  }
+# ---- MongoDB (mongodb.tf) ----
+# Official image with a fixed tag. The Bitnami image on Docker Hub only has a
+# floating "latest" tag, so it cannot be pinned.
+mongodb = {
+  image        = "mongo:7.0.30-jammy"
+  database     = "gravitee"
+  username     = "gravitee"
+  storage_size = "1Gi"
   resources = {
-    requests = {
-      memory = "512Mi"
-      cpu    = "250m"
-    }
+    requests = { cpu = "250m", memory = "512Mi" }
+    limits   = { cpu = "1", memory = "1Gi" }
   }
 }
