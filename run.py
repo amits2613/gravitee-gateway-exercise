@@ -20,7 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 TF_DIR = ROOT / "terraform"
-WAIT_SECONDS = int(os.environ.get("PONG_WAIT_SECONDS", "10"))
+WAIT_SECONDS = int(os.environ.get("PONG_WAIT_SECONDS", "180"))
 
 INSTALL_HINTS = {
     "docker": "Install Docker Desktop (Windows, macOS) or Docker Engine (Linux) and start it.",
@@ -41,12 +41,12 @@ def check_tools(*names: str) -> None:
         die("Docker is not running. Start it and try again.")
 
 
-def terraform(*args: str, capture: bool = False) -> subprocess.CompletedProcess:
+def terraform(*args: str, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
     cmd = ["terraform", f"-chdir={TF_DIR}", *args]
     if not capture:
         print("+ " + " ".join(cmd), flush=True)
     result = subprocess.run(cmd, capture_output=capture, text=True)
-    if result.returncode != 0 and not capture:
+    if result.returncode != 0 and check and not capture:
         die(f"terraform {args[0]} failed (exit {result.returncode})", result.returncode)
     return result
 
@@ -77,13 +77,28 @@ def wait_for_pong(url: str) -> str:
         except OSError as exc:  # URLError and HTTPError are OSError subclasses
             last = str(exc)
         time.sleep(5)
-    die(f"no 'pong' from {url}: {last}")
+    die(f"no 'pong' from {url} after {WAIT_SECONDS}s: {last}\nSee Troubleshooting in README.md.")
+
+
+def apply_with_retry() -> None:
+    """Apply once, and once more if it fails.
+
+    Some resources depend on pods that are still starting (for example GKO's
+    admission webhook calling the Management API). A second apply is safe and
+    picks up where the first stopped.
+    """
+    result = terraform("apply", "-auto-approve", "-input=false", check=False)
+    if result.returncode == 0:
+        return
+    print("\napply failed. Retrying once, in case a component was still starting.", flush=True)
+    time.sleep(15)
+    terraform("apply", "-auto-approve", "-input=false")
 
 
 def cmd_up() -> None:
     check_tools("docker", "terraform")
     terraform("init", "-input=false")
-    terraform("apply", "-auto-approve", "-input=false")
+    apply_with_retry()
     url = ping_url()
     body = wait_for_pong(url)
     print(f"\n{url} -> {body}")
